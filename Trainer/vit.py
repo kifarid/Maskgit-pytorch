@@ -100,7 +100,7 @@ class MaskGIT(Trainer):
         return model
 
     @staticmethod
-    def get_mask_code(code, mode="arccos", value=None):
+    def get_mask_code(code, mode="arccos", value=None, codebook_size=256):
         """ Replace the code token by *value* according the the *mode* scheduler
            :param
             code  -> torch.LongTensor(): bsize * 16 * 16, the unmasked code
@@ -129,7 +129,7 @@ class MaskGIT(Trainer):
         if value > 0:  # Mask the selected token by the value
             mask_code[mask] = torch.full_like(mask_code[mask], value)
         else:  # Replace by a randon token
-            mask_code[mask] = torch.randint_like(mask_code[mask], 0, self.codebook_size)
+            mask_code[mask] = torch.randint_like(mask_code[mask], 0, codebook_size)
 
         return mask_code, mask
 
@@ -185,7 +185,7 @@ class MaskGIT(Trainer):
                 code = code.reshape(x.size(0), self.patch_size, self.patch_size)
 
             # Mask the encoded tokens
-            masked_code, mask = self.get_mask_code(code, value=self.args.mask_value)
+            masked_code, mask = self.get_mask_code(code, value=self.args.mask_value, codebook_size=self.codebook_size)
 
             with torch.cuda.amp.autocast():                             # half precision
                 pred = self.vit(masked_code, y, drop_label=drop_label)  # The unmasked tokens prediction
