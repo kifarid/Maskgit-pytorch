@@ -23,13 +23,6 @@ from torchvision.datasets.coco import CocoCaptions
 from torchvision.datasets import ImageFolder
 
 
-#set HF_HOME 
-#set pip cache dir
-#set torch cache dir
-os.environ['HF_HOME'] = '/work/dlclarge1/faridk-quantization/.cache/huggingface'
-os.environ['TORCH_HOME'] = '/work/dlclarge1/faridk-quantization/.cache/torch'
-os.environ['PIP_CACHE_DIR'] = '/work/dlclarge1/faridk-quantization/.cache/pip'
-
 def custom_lamda(x):
     return x[:5]
 

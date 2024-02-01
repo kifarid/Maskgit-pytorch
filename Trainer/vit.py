@@ -35,6 +35,7 @@ class MaskGIT(Trainer):
         self.patch_size = self.args.img_size // 2**(self.ae.encoder.num_resolutions-1)     # Load VQGAN
         self.criterion = self.get_loss("cross_entropy", label_smoothing=0.1)    # Get cross entropy loss
         self.optim = self.get_optim(self.vit, self.args.lr, betas=(0.9, 0.96))  # Get Adam Optimizer with weight decay
+        
         # Load data if aim to train or test the model
         if not self.args.debug:
             self.train_data, self.test_data = self.get_data()
@@ -72,7 +73,6 @@ class MaskGIT(Trainer):
                 model.load_state_dict(checkpoint['model_state_dict'], strict=False)
 
             model = model.to(self.args.device)
-
             if self.args.is_multi_gpus:  # put model on multi GPUs if available
                 model = DDP(model, device_ids=[self.args.device])
 
@@ -175,6 +175,7 @@ class MaskGIT(Trainer):
             x = x.to(self.args.device)
             y = y.to(self.args.device)
             x = 2 * x - 1  # normalize from x in [0,1] to [-1,1] for VQGAN
+
             # Drop xx% of the condition for cfg
             drop_label = torch.empty(y.size()).uniform_(0, 1) < self.args.drop_label
 
@@ -182,14 +183,13 @@ class MaskGIT(Trainer):
             with torch.no_grad():
                 emb, _, [_, _, code] = self.ae.encode(x)
                 code = code.reshape(x.size(0), self.patch_size, self.patch_size)
-            
+
             # Mask the encoded tokens
             masked_code, mask = self.get_mask_code(code, value=self.args.mask_value)
 
             with torch.cuda.amp.autocast():                             # half precision
                 pred = self.vit(masked_code, y, drop_label=drop_label)  # The unmasked tokens prediction
                 # Cross-entropy loss
-                #print(code, code.dtype, code.shape)
                 loss = self.criterion(pred.reshape(-1, self.codebook_size + 1), code.view(-1)) / self.args.grad_cum
 
             # update weight if accumulation of gradient is done
