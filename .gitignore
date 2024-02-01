@@ -8,3 +8,4 @@ pretrained_maskgit/
 *.pth
 checkpoints/
 .gitignore
+.vscode

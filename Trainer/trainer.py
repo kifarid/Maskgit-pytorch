@@ -22,8 +22,6 @@ from torchvision.datasets.stl10 import STL10
 from torchvision.datasets.coco import CocoCaptions
 from torchvision.datasets import ImageFolder
 
-from Network.Taming.data.clevr import CLEVR
-
 
 #set HF_HOME 
 #set pip cache dir
@@ -154,19 +152,6 @@ class Trainer(object):
             train_loader = train_loader.unbatched().shuffle(1000).batched(self.args.bsize)
 
             return train_loader, None
-
-        elif self.args.data == "clevr":
-            # t_train = transforms.Compose([transforms.Resize(self.args.img_size),
-            #                               transforms.CenterCrop((self.args.img_size, self.args.img_size)),
-            #                               transforms.RandomHorizontalFlip(),
-            #                               transforms.ToTensor(),
-            #                               ])
-            # t_test = transforms.Compose([transforms.Resize(self.args.img_size),
-            #                                 transforms.CenterCrop((self.args.img_size, self.args.img_size)),
-            #                                 transforms.ToTensor(),
-            #                                 ])
-            data_train = CLEVR(self.args.data_folder, split="train", size=self.args.img_size)
-            data_test = CLEVR(self.args.data_folder, split="val", size=self.args.img_size)
 
         train_sampler = DistributedSampler(data_train, shuffle=True) if self.args.is_multi_gpus else None
         test_sampler = DistributedSampler(data_test, shuffle=True) if self.args.is_multi_gpus else None

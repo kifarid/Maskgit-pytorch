@@ -80,9 +80,9 @@ class MaskGIT(Trainer):
             # Load config
             config = OmegaConf.load(self.args.vqgan_folder + "model.yaml")
             model = VQModel(**config.model.params)
-            #checkpoint = torch.load(self.args.vqgan_folder + "last.ckpt", map_location="cpu")["state_dict"]
+            checkpoint = torch.load(self.args.vqgan_folder + "last.ckpt", map_location="cpu")["state_dict"]
             # Load network
-            #model.load_state_dict(checkpoint, strict=False)
+            model.load_state_dict(checkpoint, strict=False)
             model = model.eval()
             model = model.to(self.args.device)
             
