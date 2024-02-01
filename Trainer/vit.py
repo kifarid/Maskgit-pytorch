@@ -18,7 +18,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from Trainer.trainer import Trainer
 from Network.transformer import MaskTransformer
 
-from Network.Taming.models.vqgan import VQModel, LVQModel
+from Network.Taming.models.vqgan import VQModel
 
 
 class MaskGIT(Trainer):
@@ -28,7 +28,9 @@ class MaskGIT(Trainer):
         super().__init__(args)
         self.args = args                                                        # Main argument see main.py
         self.scaler = torch.cuda.amp.GradScaler()                               # Init Scaler for multi GPUs
-        self.ae = self.get_network("autoencoder")     
+        self.ae = self.get_network("autoencoder")
+        self.codebook_size = self.ae.n_embed   
+        print("Acquired codebook size:", self.codebook_size)   
         self.vit = self.get_network("vit")                                      # Load Masked Bidirectional Transformer   
         self.patch_size = self.args.img_size // 2**(self.ae.encoder.num_resolutions-1)     # Load VQGAN
         self.criterion = self.get_loss("cross_entropy", label_smoothing=0.1)    # Get cross entropy loss
@@ -77,19 +79,12 @@ class MaskGIT(Trainer):
         elif archi == "autoencoder":
             # Load config
             config = OmegaConf.load(self.args.vqgan_folder + "model.yaml")
-            print('AE config:', config)
-            AE_cls = LVQModel if 'LVQ' in config.model.target else VQModel
-
-            print("AE type is:", 'LVQ' if 'LVQ' in config.model.target else 'VQ')
-            model = AE_cls(**config.model.params)
+            model = VQModel(**config.model.params)
             #checkpoint = torch.load(self.args.vqgan_folder + "last.ckpt", map_location="cpu")["state_dict"]
             # Load network
             #model.load_state_dict(checkpoint, strict=False)
             model = model.eval()
             model = model.to(self.args.device)
-            
-            self.codebook_size = model.quantize.codebook_size if 'LVQ' in config.model.target else config.model.params.n_embed
-            print("Acquired codebook size:", self.codebook_size)
             
 
             if self.args.is_multi_gpus: # put model on multi GPUs if available
